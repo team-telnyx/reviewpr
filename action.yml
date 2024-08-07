@@ -1,0 +1,63 @@
+name: 'PR Review Action'
+description: 'A GitHub Action to review pull requests using Telnyx AI'
+author: 'team-telnyx'
+inputs:
+  telnyxai_token:
+    description: 'Telnyx AI Token'
+    required: true
+  model_name:
+    description: 'Model Name'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Install prerequisites
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq curl
+
+    - name: Review PR
+      shell: bash
+      run: |
+        echo "Reviewing PR in $GITHUB_REPOSITORY"
+
+        # Get the diff of the current branch against the base branch
+        pr_diff=$(gh pr diff ${{ github.event.number }} --patch | grep -vE "^$" | jq -Rsa . | sed -E 's/(^.)|(.$)//g')
+
+        echo "Building payload"
+        json_payload=$(cat <<EOF
+        {
+          "model": "$MODEL_NAME",
+          "messages": [{"role": "user", "content": "Review this PR for me, be descriptive but straightforward, tell me what it does, a brief summary of the changes and if there are any reasons to reject this PR: \n$pr_diff"}]
+        }
+        EOF
+        )
+
+        # Query TelnyxInference and extract only the response content
+        response=$(curl -s https://api.telnyx.com/v2/ai/chat/completions \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $TELNYXAI_TOKEN" \
+          -d "$json_payload" | jq -r ".choices[].message.content")
+
+        if [ $? -ne '0' ]; then
+          echo "Unable to contact TelnyxInference"
+          echo "Exiting with status 0 so we don't block merges and this is probably caused by a large diff"
+          exit 0
+        fi
+
+        # Publish the review comment using gh CLI
+        set +e
+        gh pr comment ${{ github.event.number }} -b "Automated $MODEL_NAME review: $response" --edit-last
+
+        if [ $? -ne '0' ]; then
+          gh pr comment ${{ github.event.number }} -b "Automated $MODEL_NAME review: $response"
+        fi
+        set -e
+      env:
+        TELNYXAI_TOKEN: ${{ inputs.telnyxai_token }}
+        MODEL_NAME: ${{ inputs.model_name }}
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
