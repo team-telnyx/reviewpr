@@ -1,5 +1,8 @@
-name: 'PR Review Action'
+name: 'Telnyx PR Reviewer'
 description: 'A GitHub Action to review pull requests using Telnyx AI'
+branding:
+  icon: 'check-circle'
+  color: 'green'
 author: 'team-telnyx'
 inputs:
   telnyx_api_key:
