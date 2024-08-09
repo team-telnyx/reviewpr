@@ -1,4 +1,4 @@
-1- Add a secret for actions on your github repository with your Telnyx Token at TELNYXAI_TOKEN
+1- Add a secret for actions on your github repository with your Telnyx API Key at TELNYX_API_KEY
 
 2- Create the following file on your repository `.github/workflows/review_pr.yml`
 
@@ -20,8 +20,9 @@ jobs:
       - name: PR Review
         uses: team-telnyx/reviewpr@main
         with:
-          telnyxai_token: ${{ secrets.TELNYXAI_TOKEN }}
+          telnyx_api_key: ${{ secrets.TELNYX_API_KEY }}
           model_name: 'meta-llama/Meta-Llama-3.1-8B-Instruct'
 ```
+The model name is optional.
 
 Done , The next time a PR is open it will be automatically reviewed by Telnyx Inference.
