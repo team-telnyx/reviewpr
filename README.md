@@ -4,7 +4,7 @@ To get started visit [Telnyx Inference documentation](https://developers.telnyx.
 
 # How to add it to my project?
 
-1. [Add a secret for actions on your github repository](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions) with your Telnyx Token at TELNYXAI_TOKEN
+1. [Add a secret for actions on your github repository](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions) with your Telnyx Api Key at TELNYX_API_KEY
 1. Create the following file on your repository `.github/workflows/review_pr.yml`
 
 ```yaml
