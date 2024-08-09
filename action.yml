@@ -2,12 +2,12 @@ name: 'PR Review Action'
 description: 'A GitHub Action to review pull requests using Telnyx AI'
 author: 'team-telnyx'
 inputs:
-  telnyxai_token:
-    description: 'Telnyx AI Token'
+  telnyx_api_key:
+    description: 'Telnyx API Key'
     required: true
   model_name:
     description: 'Model Name'
-    required: true
+    default: 'meta-llama/Meta-Llama-3.1-8B-Instruct'
 runs:
   using: 'composite'
   steps:
@@ -37,7 +37,7 @@ runs:
         # Query TelnyxInference and extract only the response content
         response=$(curl -s https://api.telnyx.com/v2/ai/chat/completions \
           -H "Content-Type: application/json" \
-          -H "Authorization: Bearer $TELNYXAI_TOKEN" \
+          -H "Authorization: Bearer $TELNYX_API_KEY" \
           -d "$json_payload" | jq -r ".choices[].message.content")
 
         if [ $? -ne '0' ]; then
@@ -55,7 +55,7 @@ runs:
         fi
         set -e
       env:
-        TELNYXAI_TOKEN: ${{ inputs.telnyxai_token }}
+        TELNYX_API_KEY: ${{ inputs.telnyx_api_key }}
         MODEL_NAME: ${{ inputs.model_name }}
         GITHUB_SHA: ${{ github.sha }}
         GITHUB_REPOSITORY: ${{ github.repository }}

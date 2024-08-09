@@ -25,8 +25,9 @@ jobs:
       - name: PR Review
         uses: team-telnyx/reviewpr@main
         with:
-          telnyxai_token: ${{ secrets.TELNYXAI_TOKEN }}
+          telnyx_api_key: ${{ secrets.TELNYX_API_KEY }}
           model_name: 'meta-llama/Meta-Llama-3.1-8B-Instruct'
 ```
+The model name is optional.
 
 And done , The next time a PR is open it will be automatically reviewed by Telnyx Inference.
