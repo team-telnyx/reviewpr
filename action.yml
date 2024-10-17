@@ -11,6 +11,9 @@ inputs:
   model_name:
     description: 'Model Name'
     default: 'meta-llama/Meta-Llama-3.1-8B-Instruct'
+  custom_message:
+    description: 'Custom message for the AI review prompt'
+    required: false
 runs:
   using: 'composite'
   steps:
@@ -28,11 +31,18 @@ runs:
         # Get the diff of the current branch against the base branch
         pr_diff=$(gh pr diff ${{ github.event.number }} --patch | grep -vE "^$" | jq -Rsa . | sed -E 's/(^.)|(.$)//g')
 
+        # Use custom message if provided, otherwise use the default message
+        if [ -n "$CUSTOM_MESSAGE" ]; then
+          review_message=$(echo "$CUSTOM_MESSAGE" | grep -vE "^$" | jq -Rsa . | sed -E 's/(^.)|(.$)//g')
+        else
+          review_message="Review this PR for me, be descriptive but straightforward, tell me what it does, a brief summary of the changes and if there are any reasons to reject this PR:"
+        fi
+
         echo "Building payload"
         json_payload=$(cat <<EOF
         {
           "model": "$MODEL_NAME",
-          "messages": [{"role": "user", "content": "Review this PR for me, be descriptive but straightforward, tell me what it does, a brief summary of the changes and if there are any reasons to reject this PR: \n$pr_diff"}]
+          "messages": [{"role": "user", "content": "$review_message\n$pr_diff"}]
         }
         EOF
         )
@@ -60,6 +70,7 @@ runs:
       env:
         TELNYX_API_KEY: ${{ inputs.telnyx_api_key }}
         MODEL_NAME: ${{ inputs.model_name }}
+        CUSTOM_MESSAGE: ${{ inputs.custom_message }}
         GITHUB_SHA: ${{ github.sha }}
         GITHUB_REPOSITORY: ${{ github.repository }}
         GITHUB_TOKEN: ${{ github.token }}
