@@ -27,7 +27,10 @@ jobs:
         with:
           telnyx_api_key: ${{ secrets.TELNYX_API_KEY }}
           model_name: 'meta-llama/Meta-Llama-3.1-8B-Instruct'
+          custom_message: 'Optional: Your custom review prompt here'
 ```
-The model name is optional.
+The `model_name` and `custom_message` are optional.
 
-And done , The next time a PR is open it will be automatically reviewed by Telnyx Inference.
+If you don't provide a `custom_message`, the action will use a default review prompt.
+
+And done! The next time a PR is opened, it will be automatically reviewed by Telnyx Inference.
