@@ -42,7 +42,10 @@ runs:
         json_payload=$(cat <<EOF
         {
           "model": "$MODEL_NAME",
-          "messages": [{"role": "user", "content": "$review_message\n$pr_diff"}]
+          "messages": [
+            {"role": "system", "content": "$review_message"},
+            {"role": "user", "content": "$pr_diff"}
+          ]
         }
         EOF
         )
