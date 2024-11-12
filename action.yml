@@ -24,10 +24,52 @@ runs:
       shell: bash
       run: |
         echo "Reviewing PR in $GITHUB_REPOSITORY"
-
+        # Check if TELNYX_API_KEY is set
+        if [ -z "$TELNYX_API_KEY" ]; then
+          echo "Error: TELNYX_API_KEY environment variable is not set."
+          exit 1
+        fi
+        
+        echo "Fetching PR diff"
         # Get the diff of the current branch against the base branch
-        pr_diff=$(gh pr diff ${{ github.event.number }} --patch | grep -vE "^$" | jq -Rsa . | sed -E 's/(^.)|(.$)//g')
-
+        set -eo pipefail
+        
+        # Create a temporary file to store the diff
+        DIFF_FILE=$(mktemp)
+        PROCESSED_FILE=$(mktemp)
+        trap 'rm -f "$DIFF_FILE" "$PROCESSED_FILE"' EXIT
+        
+        # Fetch the diff into the temp file
+        if ! gh pr diff ${{ github.event.number }} --patch > "$DIFF_FILE"; then
+          echo "::error::Failed to fetch PR diff"
+          exit 1
+        fi
+        
+        # Remove empty lines and store in intermediate file
+        if ! grep -vE "^$" "$DIFF_FILE" > "$PROCESSED_FILE"; then
+          echo "::error::Failed to process PR diff"
+          exit 1
+        fi
+        
+        # Truncate and process the diff
+        if ! pr_diff=$(dd if="$PROCESSED_FILE" bs=100000 count=1 2>/dev/null | \
+                      jq -Rs . | \
+                      sed -E 's/(^"|"$)//g'); then
+          echo "::error::Failed to format PR diff"
+          exit 1
+        fi
+        
+        # Check if the diff was truncated
+        original_size=$(wc -c < "$PROCESSED_FILE")
+        if [ "$original_size" -gt 100000 ]; then
+          echo "Note: PR diff was truncated to 100KB for processing."
+        fi
+        
+        if [ -z "$pr_diff" ]; then
+          echo "::error::PR diff is empty"
+          exit 1
+        fi
+        
         echo "Building payload"
         payload_file=$(mktemp)
         cat > "$payload_file" <<EOF
